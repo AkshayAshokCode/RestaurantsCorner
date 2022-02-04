@@ -26,12 +26,27 @@ class RestaurantsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_restaurants)
         restaurantsAdapter = RestaurantsAdapter()
         recyclerViewRestaurants.apply {
-            layoutManager = LinearLayoutManager(context!!,
+            layoutManager = LinearLayoutManager(
+                context!!,
                 LinearLayoutManager.VERTICAL,
-                false)
+                false
+            )
             this.adapter = restaurantsAdapter
         }
         showRestaurants()
+    }
+
+    private fun getRestaurants(completionHandler: (response: RestaurantListResponse) -> Unit) {
+        val client = RestaurantsRestClient()
+        val userId = MockCreator.getUserId()
+        disposable.add(
+            client.getRestaurants(userId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ response ->
+                    completionHandler.invoke(response)
+                }, {})
+        )
     }
 
     private fun showRestaurants() {
@@ -48,7 +63,8 @@ class RestaurantsActivity : AppCompatActivity() {
                     if (restaurants != null) {
                         for (responseRestaurant in restaurants) {
                             if (responseRestaurant.name != null
-                                && responseRestaurant.imageUrl != null) {
+                                && responseRestaurant.imageUrl != null
+                            ) {
                                 val location = SimpleLocation(
                                     responseRestaurant.locationLatitude,
                                     responseRestaurant.locationLongitude
@@ -67,7 +83,7 @@ class RestaurantsActivity : AppCompatActivity() {
                         }
                     }
 
-                    val filteredRestaurants =  arrayListOf<Restaurant> ()
+                    val filteredRestaurants = arrayListOf<Restaurant>()
                     for (parsedRestaurant in parsedRestaurants) {
                         if (parsedRestaurant.closingHour < 6)
                             filteredRestaurants.add(parsedRestaurant)
@@ -79,10 +95,14 @@ class RestaurantsActivity : AppCompatActivity() {
                         val userLong = MockCreator.getUserLongitude()
 
                         val R = 6371 // Radius of the earth
-                        val latDistance = Math.toRadians(userLat
-                                - filteredRestaurant.location.latitude)
-                        val lonDistance = Math.toRadians(userLong
-                                - filteredRestaurant.location.longitude)
+                        val latDistance = Math.toRadians(
+                            userLat
+                                    - filteredRestaurant.location.latitude
+                        )
+                        val lonDistance = Math.toRadians(
+                            userLong
+                                    - filteredRestaurant.location.longitude
+                        )
                         val a = (Math.sin(latDistance / 2)
                                 * Math.sin(latDistance / 2)
                                 + (Math.cos(Math.toRadians(filteredRestaurant.location.latitude))
@@ -92,25 +112,26 @@ class RestaurantsActivity : AppCompatActivity() {
                         val distance = R * c
                         Log.d("DISTANCE_LOGS", "found distance at $distance")
                         filteredRestaurant.distance = Math.sqrt(
-                            Math.pow(distance, 2.0) + 0.0).toInt()
+                            Math.pow(distance, 2.0) + 0.0
+                        ).toInt()
                     }
                     Collections.sort(filteredRestaurants, RestaurantDistanceSorter())
 
-                    val displayRestaurants= arrayListOf<RestaurantDisplayItem>()
+                    val displayRestaurants = arrayListOf<RestaurantDisplayItem>()
                     filteredRestaurants.forEach { restaurant ->
                         displayRestaurants.add(
                             RestaurantDisplayItem(
-                                id = restaurant.id ,
+                                id = restaurant.id,
                                 displayName = "Restaurant ${restaurant.name}",
                                 displayDistance = "at ${restaurant.distance} KM distance",
                                 imageUrl = restaurant.imageUrl,
                                 type = restaurant.type
-                           )
+                            )
                         )
                     }
 
                     val adapter = restaurantsAdapter
-                    if(adapter != null) {
+                    if (adapter != null) {
                         adapter.restaurants = displayRestaurants
                         adapter.clickListener =
                             object : RestaurantsAdapter.RestaurantClickListener {
