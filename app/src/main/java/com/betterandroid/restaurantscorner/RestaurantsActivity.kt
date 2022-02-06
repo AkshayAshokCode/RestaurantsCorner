@@ -1,5 +1,6 @@
 package com.betterandroid.restaurantscorner
 
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -102,27 +103,18 @@ class RestaurantsActivity : AppCompatActivity() {
         for (filteredRestaurant in filteredRestaurants) {
             val userLat = MockCreator.getUserLatitude()
             val userLong = MockCreator.getUserLongitude()
+            val distance = FloatArray(2)
+            Location.distanceBetween(
+                userLat,
+                userLong,
+                filteredRestaurant.location.latitude,
+                filteredRestaurant.location.longitude,
+                distance
+            )
 
-            val R = 6371 // Radius of the earth
-            val latDistance = Math.toRadians(
-                userLat
-                        - filteredRestaurant.location.latitude
-            )
-            val lonDistance = Math.toRadians(
-                userLong
-                        - filteredRestaurant.location.longitude
-            )
-            val a = (Math.sin(latDistance / 2)
-                    * Math.sin(latDistance / 2)
-                    + (Math.cos(Math.toRadians(filteredRestaurant.location.latitude))
-                    * Math.cos(Math.toRadians(userLat))
-                    * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2)))
-            val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-            val distance = R * c
-            Log.d("DISTANCE_LOGS", "found distance at $distance")
-            filteredRestaurant.distance = Math.sqrt(
-                Math.pow(distance, 2.0) + 0.0
-            ).toInt()
+            val distanceResult = distance[0] / 1000
+            filteredRestaurant.distance=distanceResult.toInt()
+            Log.d("DISTANCE_LOGS", "found distance at $distanceResult")
         }
         Collections.sort(filteredRestaurants, RestaurantDistanceSorter())
         return filteredRestaurants
