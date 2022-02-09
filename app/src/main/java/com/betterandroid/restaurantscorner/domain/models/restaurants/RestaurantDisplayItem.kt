@@ -1,4 +1,4 @@
-package com.betterandroid.restaurantscorner
+package com.betterandroid.restaurantscorner.domain.models.restaurants
 
 data class RestaurantDisplayItem(
     val id: Int,
